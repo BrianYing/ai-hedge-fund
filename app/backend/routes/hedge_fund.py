@@ -5,7 +5,7 @@ import asyncio
 from app.backend.models.schemas import ErrorResponse, HedgeFundRequest
 from app.backend.models.events import StartEvent, ProgressUpdateEvent, ErrorEvent, CompleteEvent
 from app.backend.services.graph import create_graph, parse_hedge_fund_response, run_graph_async
-from app.backend.services.portfolio import create_portfolio
+from app.backend.services.portfolio import create_alpaca_portfolio, create_portfolio
 from src.utils.progress import progress
 
 router = APIRouter(prefix="/hedge-fund")
@@ -22,7 +22,7 @@ router = APIRouter(prefix="/hedge-fund")
 async def run_hedge_fund(request: HedgeFundRequest):
     try:
         # Create the portfolio
-        portfolio = create_portfolio(request.initial_cash, request.margin_requirement, request.tickers)
+        portfolio = create_alpaca_portfolio(request.margin_requirement, request.tickers)
 
         # Construct agent graph
         graph = create_graph(request.selected_agents)
@@ -89,6 +89,7 @@ async def run_hedge_fund(request: HedgeFundRequest):
                         "analyst_signals": result.get("data", {}).get("analyst_signals", {}),
                     }
                 )
+                print("Final data:", final_data.data)
                 yield final_data.to_sse()
 
             finally:

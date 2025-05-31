@@ -40,9 +40,11 @@ const DEFAULT_AGENT_NODE_STATE: AgentNodeData = {
 interface NodeContextType {
   agentNodeData: Record<string, AgentNodeData>;
   outputNodeData: OutputNodeData | null;
+  outputNodeOrderStatus: 'IDLE' | 'IN_PROGRESS' | 'COMPLETE' | 'ERROR';
   updateAgentNode: (nodeId: string, data: Partial<AgentNodeData> | NodeStatus) => void;
   updateAgentNodes: (nodeIds: string[], status: NodeStatus) => void;
   setOutputNodeData: (data: OutputNodeData) => void;
+  setOutputNodeOrderStatus: (status: 'IDLE' | 'IN_PROGRESS' | 'COMPLETE' | 'ERROR') => void;
   resetAllNodes: () => void;
 }
 
@@ -51,6 +53,7 @@ const NodeContext = createContext<NodeContextType | undefined>(undefined);
 export function NodeProvider({ children }: { children: ReactNode }) {
   const [agentNodeData, setAgentNodeData] = useState<Record<string, AgentNodeData>>({});
   const [outputNodeData, setOutputNodeData] = useState<OutputNodeData | null>(null);
+  const [outputNodeOrderStatus, setOutputNodeOrderStatus] = useState<'IDLE' | 'IN_PROGRESS' | 'COMPLETE' | 'ERROR'>('IDLE');
 
   const updateAgentNode = useCallback((nodeId: string, data: Partial<AgentNodeData> | NodeStatus) => {
     // Handle string status shorthand (just passing a status string)
@@ -127,6 +130,7 @@ export function NodeProvider({ children }: { children: ReactNode }) {
   const resetAllNodes = useCallback(() => {
     setAgentNodeData({});
     setOutputNodeData(null);
+    setOutputNodeOrderStatus('IDLE');
   }, []);
 
   return (
@@ -134,9 +138,11 @@ export function NodeProvider({ children }: { children: ReactNode }) {
       value={{
         agentNodeData,
         outputNodeData,
+        outputNodeOrderStatus,
         updateAgentNode,
         updateAgentNodes,
         setOutputNodeData,
+        setOutputNodeOrderStatus,
         resetAllNodes,
       }}
     >

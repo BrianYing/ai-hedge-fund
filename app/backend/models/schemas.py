@@ -29,3 +29,11 @@ class HedgeFundRequest(BaseModel):
         if self.start_date:
             return self.start_date
         return (datetime.strptime(self.end_date, "%Y-%m-%d") - timedelta(days=90)).strftime("%Y-%m-%d")
+
+
+class OrderRequest(BaseModel):
+    ticker: str
+    qty: int
+
+    def __str__(self):
+        return f"OrderRequest(ticker={self.ticker}, qty={self.qty})"

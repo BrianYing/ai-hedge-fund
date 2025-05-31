@@ -1,6 +1,6 @@
 import { type NodeProps } from '@xyflow/react';
 import { Bot, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { CardContent } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { useNodeContext } from '@/contexts/node-context';
 import { type TextOutputNode } from '../types';
 import { NodeShell } from './node-shell';
 import { TextOutputDialog } from './text-output-dialog';
+import { api } from '@/services/api';
 
 export function TextOutputNode({
   data,
@@ -15,8 +16,10 @@ export function TextOutputNode({
   id,
   isConnectable,
 }: NodeProps<TextOutputNode>) {  
-  const { outputNodeData, agentNodeData } = useNodeContext();
+  const { outputNodeData, agentNodeData, outputNodeOrderStatus } = useNodeContext();
   const [showOutput, setShowOutput] = useState(false);
+  const abortControllerRef = useRef<(() => void) | null>(null);
+  const nodeContext = useNodeContext();
   
   // Check if any agent is in progress
   const isProcessing = Object.values(agentNodeData).some(
@@ -25,9 +28,36 @@ export function TextOutputNode({
   
   const isOutputAvailable = !!outputNodeData;
 
+  const isOrderComplete = outputNodeOrderStatus === 'COMPLETE';
+  const isOrderError = outputNodeOrderStatus === 'ERROR';
+
   const handleViewOutput = () => {
     setShowOutput(true);
   }
+
+  const handleOrder = () => {
+    const tickers = Object.keys(outputNodeData?.decisions || {});
+    tickers.forEach((ticker) => {
+      const decision = outputNodeData?.decisions[ticker];
+      if (decision.action === "buy") {
+        abortControllerRef.current = api.runBuy(
+          {
+            ticker: ticker,
+            qty: decision.quantity,
+          },
+          nodeContext
+        );
+      } else if (decision.action === "sell") {
+        abortControllerRef.current = api.runSell(
+          {
+            ticker: ticker,
+            qty: decision.quantity,
+          },
+          nodeContext
+        );
+      }
+    });
+  };
 
   return (
     <>
@@ -66,6 +96,37 @@ export function TextOutputNode({
                    View Output
                   </Button>
                 )}
+              </div>
+              <div className="text-subtitle text-muted-foreground flex items-center gap-1">
+                Execute
+              </div>
+              <div className="flex gap-2">
+                  {isOrderError ? (
+                    <Button
+                      variant="secondary"
+                      className="w-full flex-shrink-0 transition-all duration-200 hover:bg-primary hover:text-primary-foreground active:scale-95 text-subtitle"
+                      disabled
+                    >
+                      ERROR
+                    </Button>
+                  ) : isOrderComplete ? (
+                    <Button
+                      variant="secondary"
+                      className="w-full flex-shrink-0 transition-all duration-200 hover:bg-primary hover:text-primary-foreground active:scale-95 text-subtitle"
+                      disabled
+                    >
+                      Order Complete
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="secondary"
+                      className="w-full flex-shrink-0 transition-all duration-200 hover:bg-primary hover:text-primary-foreground active:scale-95 text-subtitle"
+                      onClick={handleOrder}
+                      disabled={!isOutputAvailable}
+                    >
+                      Execute Order
+                    </Button>
+                  )}
               </div>
             </div>
           </div>

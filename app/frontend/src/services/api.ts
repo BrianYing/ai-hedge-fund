@@ -12,6 +12,11 @@ interface HedgeFundRequest {
   margin_requirement?: number;
 }
 
+interface OrderRequest {
+  ticker: string;
+  qty: number;
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export const api = {
@@ -169,4 +174,75 @@ export const api = {
       controller.abort();
     };
   },
-}; 
+
+  runBuy: (
+    orderRequest: OrderRequest,
+    nodeContext: ReturnType<typeof useNodeContext>
+  ): (() => void) => {
+    nodeContext.setOutputNodeOrderStatus('IN_PROGRESS');
+
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    fetch(`${API_BASE_URL}/trade/buy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(orderRequest),
+      signal,
+    })
+    .then(response => {
+      if (!response.ok) {
+        nodeContext.setOutputNodeOrderStatus('ERROR');
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      nodeContext.setOutputNodeOrderStatus('COMPLETE');
+    })
+    .catch((error: any) => {
+      nodeContext.setOutputNodeOrderStatus('ERROR');
+      if (error.name !== 'AbortError') {
+        console.error('SSE connection error:', error);
+      }
+    });
+
+    return () => {
+      controller.abort();
+    };
+  },
+
+  runSell: (
+    orderRequest: OrderRequest,
+    nodeContext: ReturnType<typeof useNodeContext>
+  ): (() => void) => {
+    nodeContext.setOutputNodeOrderStatus('IN_PROGRESS');
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    fetch(`${API_BASE_URL}/trade/sell`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(orderRequest),
+      signal,
+    })
+    .then(response => {
+      if (!response.ok) {
+        nodeContext.setOutputNodeOrderStatus('ERROR');
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      nodeContext.setOutputNodeOrderStatus('COMPLETE');
+    })
+    .catch((error: any) => {
+      nodeContext.setOutputNodeOrderStatus('ERROR');
+      if (error.name !== 'AbortError') {
+        console.error('SSE connection error:', error);
+      }
+    });
+
+    return () => {
+      controller.abort();
+    };
+  }
+};
