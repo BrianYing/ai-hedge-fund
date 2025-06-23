@@ -43,7 +43,7 @@ def create_alpaca_portfolio(margin_requirement: float, tickers: list[str]) -> di
             "long": 0.0,  # Realized gains from long positions
             "short": 0.0,  # Realized gains from short positions
        }
-       
+
     return {
         "cash": float(alpaca_client.account.cash),
         "margin_requirement": margin_requirement,
