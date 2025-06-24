@@ -5,6 +5,7 @@ import { InvestmentReportNode } from './components/investment-report-node';
 import { JsonOutputNode } from './components/json-output-node';
 import { PortfolioManagerNode } from './components/portfolio-manager-node';
 import { type AppNode } from './types';
+import { TextOutputNode } from './components/text-output-node';
 
 // Types
 export * from './types';
@@ -52,4 +53,5 @@ export const nodeTypes = {
   'portfolio-manager-node': PortfolioManagerNode,
   'investment-report-node': InvestmentReportNode,
   'json-output-node': JsonOutputNode,
+  'text-output-node': TextOutputNode,
 } satisfies NodeTypes;

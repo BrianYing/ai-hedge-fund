@@ -47,6 +47,18 @@ const baseNodeTypeDefinitions: Record<string, NodeTypeDefinition> = {
       },
     }),
   },
+  "Order Execution": {
+    createNode: (position: { x: number, y: number }): AppNode => ({
+      id: `text-output-node`,
+      type: "text-output-node",
+      position,
+      data: {
+        name: "Order Execution",
+        description: "End Node",
+        status: "Idle",
+      },
+    }),
+  },
 };
 
 /**

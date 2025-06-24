@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -10,10 +11,12 @@ app = FastAPI(title="AI Hedge Fund API", description="Backend API for AI Hedge F
 # Initialize database tables (this is safe to run multiple times)
 Base.metadata.create_all(bind=engine)
 
+frontend = os.getenv("FRONTEND_HOST")
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],  # Frontend URLs
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", frontend],  # Frontend URLs
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

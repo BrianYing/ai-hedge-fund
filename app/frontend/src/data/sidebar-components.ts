@@ -67,6 +67,7 @@ export const getComponentGroups = async (): Promise<ComponentGroup[]> => {
       items: [
         { name: "JSON Output", icon: FileJson },
         { name: "Investment Report", icon: FileText },
+        { name: "Order Execution", icon: FileText },
       ]
     },
   ];

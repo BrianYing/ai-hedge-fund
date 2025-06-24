@@ -7,4 +7,5 @@ export type AgentNode = Node<{ name: string, description: string, status: string
 export type PortfolioManagerNode = Node<{ name: string, description: string, status: string }, 'portfolio-manager-node'>;
 export type InvestmentReportNode = Node<{ name: string, description: string, status: string }, 'investment-report-node'>;
 export type JsonOutputNode = Node<{ name: string, description: string, status: string }, 'json-output-node'>;
-export type AppNode = BuiltInNode | AgentNode | PortfolioManagerNode | InvestmentReportNode | JsonOutputNode;
+export type TextOutputNode = Node<{ name: string, description: string, status: string }, 'text-output-node'>;
+export type AppNode = BuiltInNode | AgentNode | PortfolioManagerNode | InvestmentReportNode | JsonOutputNode | TextOutputNode;
