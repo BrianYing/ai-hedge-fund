@@ -632,54 +632,95 @@ def search_line_items(
                     elif item == "gross_margin":
                         gross_profit = get_value_from_df(income_stmt, "Gross Profit", date)
                         revenue = get_value_from_df(income_stmt, "Total Revenue", date)
+                        if gross_profit is None or revenue is None:
+                            gross_profit = get_value_from_df(q_income_stmt, "Gross Profit", date)
+                            revenue = get_value_from_df(q_income_stmt, "Total Revenue", date)
                         if gross_profit and revenue:
                             line_item_data[item] = gross_profit / revenue
-                    
+                        else:
+                            line_item_data[item] = None
+
                     elif item == "operating_margin":
                         op_income = get_value_from_df(income_stmt, "Operating Income", date)
                         revenue = get_value_from_df(income_stmt, "Total Revenue", date)
+                        if op_income is None or revenue is None:
+                            op_income = get_value_from_df(q_income_stmt, "Operating Income", date)
+                            revenue = get_value_from_df(q_income_stmt, "Total Revenue", date)
                         if op_income and revenue:
                             line_item_data[item] = op_income / revenue
-                    
+                        else:
+                            line_item_data[item] = None
+
                     elif item == "free_cash_flow":
                         ocf = get_value_from_df(cash_flow, "Operating Cash Flow", date)
                         capex = get_value_from_df(cash_flow, "Capital Expenditure", date)
+                        if ocf is None or capex is None:
+                            ocf = get_value_from_df(q_cash_flow, "Operating Cash Flow", date)
+                            capex = get_value_from_df(q_cash_flow, "Capital Expenditure", date)
                         if ocf and capex:
                             line_item_data[item] = ocf + capex  # CapEx is usually negative
-                    
+                        else:
+                            line_item_data[item] = None
+
                     elif item == "working_capital":
                         current_assets = get_value_from_df(balance_sheet, "Current Assets", date)
                         current_liabilities = get_value_from_df(balance_sheet, "Current Liabilities", date)
+                        if current_assets is None or current_liabilities is None:
+                            current_assets = get_value_from_df(q_balance_sheet, "Current Assets", date)
+                            current_liabilities = get_value_from_df(q_balance_sheet, "Current Liabilities", date)
                         if current_assets and current_liabilities:
                             line_item_data[item] = current_assets - current_liabilities
-                    
+                        else:
+                            line_item_data[item] = None
+
                     elif item == "goodwill_and_intangible_assets":
                         goodwill = get_value_from_df(balance_sheet, "Goodwill", date)
                         intangibles = get_value_from_df(balance_sheet, "Intangible Assets", date)
+                        if goodwill is None and intangibles is None:
+                            goodwill = get_value_from_df(q_balance_sheet, "Goodwill", date)
+                            intangibles = get_value_from_df(q_balance_sheet, "Intangible Assets", date)
                         if goodwill or intangibles:
                             line_item_data[item] = (goodwill or 0) + (intangibles or 0)
-                    
+                        else:
+                            line_item_data[item] = None
+
                     elif item == "outstanding_shares":
                         line_item_data[item] = info.get("sharesOutstanding")
-                    
+
                     elif item == "return_on_invested_capital":
                         net_income = get_value_from_df(income_stmt, "Net Income", date)
                         total_equity = get_value_from_df(balance_sheet, "Stockholders Equity", date)
                         total_debt = get_value_from_df(balance_sheet, "Total Debt", date)
+                        if net_income is None:
+                            net_income = get_value_from_df(q_income_stmt, "Net Income", date)
+                        if total_equity is None:
+                            total_equity = get_value_from_df(q_balance_sheet, "Stockholders Equity", date)
+                        if total_debt is None:
+                            total_debt = get_value_from_df(q_balance_sheet, "Total Debt", date)
                         if net_income and (total_equity or total_debt):
                             invested_capital = (total_equity or 0) + (total_debt or 0)
                             if invested_capital > 0:
                                 line_item_data[item] = net_income / invested_capital
-                    
+                        else:
+                            line_item_data[item] = None
+
                     elif item == "debt_to_equity":
                         total_debt = get_value_from_df(balance_sheet, "Total Debt", date)
                         total_equity = get_value_from_df(balance_sheet, "Stockholders Equity", date)
+                        if total_debt is None:
+                            total_debt = get_value_from_df(q_balance_sheet, "Total Debt", date)
+                        if total_equity is None:
+                            total_equity = get_value_from_df(q_balance_sheet, "Stockholders Equity", date)
                         if total_debt and total_equity and total_equity > 0:
                             line_item_data[item] = total_debt / total_equity
+                        else:
+                            line_item_data[item] = None
 
                     elif item == "earnings_per_share":
                         net_income = get_value_from_df(income_stmt, "Net Income", date)
                         shares_outstanding = info.get("sharesOutstanding")
+                        if net_income is None:
+                            net_income = get_value_from_df(q_income_stmt, "Net Income", date)
                         if net_income and shares_outstanding:
                             line_item_data[item] = net_income / shares_outstanding
                         else:
@@ -688,6 +729,8 @@ def search_line_items(
                     elif item == "book_value_per_share":
                         total_equity = get_value_from_df(balance_sheet, "Stockholders Equity", date)
                         shares_outstanding = info.get("sharesOutstanding")
+                        if total_equity is None:
+                            total_equity = get_value_from_df(q_balance_sheet, "Stockholders Equity", date)
                         if total_equity and shares_outstanding:
                             line_item_data[item] = total_equity / shares_outstanding
                         else:
