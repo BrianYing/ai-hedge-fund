@@ -1,7 +1,7 @@
-import { useFlowManagement } from '@/hooks/use-flow-management';
+import { useFlowManagementTabs } from '@/hooks/use-flow-management-tabs';
 import { useResizable } from '@/hooks/use-resizable';
 import { cn } from '@/lib/utils';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { FlowActions } from './flow-actions';
 import { FlowCreateDialog } from './flow-create-dialog';
 import { FlowList } from './flow-list';
@@ -12,11 +12,13 @@ interface LeftSidebarProps {
   onCollapse: () => void;
   onExpand: () => void;
   onToggleCollapse: () => void;
+  onWidthChange?: (width: number) => void;
 }
 
 export function LeftSidebar({
   isCollapsed,
   onToggleCollapse,
+  onWidthChange,
 }: LeftSidebarProps) {
   // Use our custom hooks
   const { width, isDragging, elementRef, startResize } = useResizable({
@@ -25,8 +27,13 @@ export function LeftSidebar({
     maxWidth: 500,
     side: 'left',
   });
+
+  // Notify parent component of width changes
+  useEffect(() => {
+    onWidthChange?.(width);
+  }, [width, onWidthChange]);
   
-  // Use flow management hook
+  // Use flow management hook with tabs
   const {
     flows,
     searchQuery,
@@ -42,16 +49,16 @@ export function LeftSidebar({
     handleCreateNewFlow,
     handleFlowCreated,
     handleSaveCurrentFlow,
-    handleLoadFlow,
+    handleOpenFlowInTab,
     handleDeleteFlow,
     handleRefresh,
-  } = useFlowManagement();
+  } = useFlowManagementTabs();
 
   return (
     <div 
       ref={elementRef}
       className={cn(
-        "h-full bg-panel flex flex-col relative",
+        "h-full bg-panel flex flex-col relative pt-5",
         isCollapsed ? "shadow-lg" : "",
         isDragging ? "select-none" : ""
       )}
@@ -76,7 +83,7 @@ export function LeftSidebar({
         templateFlows={templateFlows}
         onSearchChange={setSearchQuery}
         onAccordionChange={handleAccordionChange}
-        onLoadFlow={handleLoadFlow}
+        onLoadFlow={handleOpenFlowInTab}
         onDeleteFlow={handleDeleteFlow}
         onRefresh={handleRefresh}
       />

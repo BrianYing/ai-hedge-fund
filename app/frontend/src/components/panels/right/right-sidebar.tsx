@@ -12,11 +12,13 @@ interface RightSidebarProps {
   onCollapse: () => void;
   onExpand: () => void;
   onToggleCollapse: () => void;
+  onWidthChange?: (width: number) => void;
 }
 
 export function RightSidebar({
   isCollapsed,
   onToggleCollapse,
+  onWidthChange,
 }: RightSidebarProps) {
   // Use our custom hooks
   const { width, isDragging, elementRef, startResize } = useResizable({
@@ -25,6 +27,11 @@ export function RightSidebar({
     maxWidth: 500,
     side: 'right',
   });
+  
+  // Notify parent component of width changes
+  useEffect(() => {
+    onWidthChange?.(width);
+  }, [width, onWidthChange]);
   
   // State for loading component groups
   const [componentGroups, setComponentGroups] = useState<ComponentGroup[]>([]);
@@ -60,7 +67,7 @@ export function RightSidebar({
     <div 
       ref={elementRef}
       className={cn(
-        "h-full bg-panel flex flex-col relative",
+        "h-full bg-panel flex flex-col relative p-5",
         isCollapsed ? "shadow-lg" : "",
         isDragging ? "select-none" : ""
       )}
