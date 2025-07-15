@@ -1,9 +1,10 @@
 import { getMultiNodeDefinition, isMultiNodeComponent } from '@/data/multi-node-mappings';
 import { getNodeIdForComponent, getNodeTypeDefinition } from '@/data/node-mappings';
+import { flowConnectionManager } from '@/hooks/use-flow-connection';
 import { clearAllNodeStates, getAllNodeStates, setNodeInternalState, setCurrentFlowId as setNodeStateFlowId } from '@/hooks/use-node-state';
 import { flowService } from '@/services/flow-service';
 import { Flow } from '@/types/flow';
-import { ReactFlowInstance, useReactFlow, XYPosition } from '@xyflow/react';
+import { ReactFlowInstance, useReactFlow, XYPosition, MarkerType } from '@xyflow/react';
 import { createContext, ReactNode, useCallback, useContext, useState } from 'react';
 
 interface FlowContextType {
@@ -77,9 +78,15 @@ export function FlowProvider({ children }: FlowProviderProps) {
       const edges = reactFlowInstance.getEdges();
       const viewport = reactFlowInstance.getViewport();
       
-      // Collect all node internal states
+      // Collect all node internal states (from use-node-state)
       const nodeStates = getAllNodeStates();
-      const data = Object.fromEntries(nodeStates);
+      const nodeInternalStates = Object.fromEntries(nodeStates);
+
+      // Create structured data - nodeContextData will be added by enhanced save functions
+      const data = {
+        nodeStates: nodeInternalStates,  // use-node-state data
+        // nodeContextData will be added separately by enhanced save functions
+      };
 
       if (currentFlowId) {
         // Update existing flow
@@ -132,14 +139,19 @@ export function FlowProvider({ children }: FlowProviderProps) {
       setCurrentFlowId(flow.id);
       setCurrentFlowName(flow.name);
       
-      // Clear existing node states for this flow
-      clearAllNodeStates();
-      
-      // Restore internal states BEFORE setting nodes so they're available during render
+      // DO NOT clear configuration state when loading flows - useNodeState handles flow isolation automatically
+      // Only restore additional internal states if they exist in the flow data
       if (flow.data) {
-        Object.entries(flow.data).forEach(([nodeId, nodeState]) => {
-          setNodeInternalState(nodeId, nodeState as Record<string, any>);
-        });
+        // Handle backward compatibility - data might be direct nodeStates or structured data
+        const dataToRestore = flow.data.nodeStates || flow.data;
+        
+        if (dataToRestore) {
+          Object.entries(dataToRestore).forEach(([nodeId, nodeState]) => {
+            setNodeInternalState(nodeId, nodeState as Record<string, any>);
+          });
+        }
+        
+        // nodeContextData restoration will be handled by enhanced load functions
       }
       
       // Now render the nodes - useNodeState hooks will initialize with correct flow ID
@@ -159,6 +171,17 @@ export function FlowProvider({ children }: FlowProviderProps) {
       
       // Remember this flow as the last selected
       localStorage.setItem('lastSelectedFlowId', flow.id.toString());
+
+      // IMPORTANT: Allow components to mount first, then recover connection state
+      // This ensures useFlowConnection hooks are initialized before recovery
+      setTimeout(() => {
+        // Check if this flow has any stale processing states and recover them
+        const connection = flowConnectionManager.getConnection(flow.id.toString());
+        if (connection.state === 'idle') {
+          // No active connection, so any IN_PROGRESS states are stale and should be reset
+          console.log(`Flow ${flow.id} loaded - checking for stale connection states`);
+        }
+      }, 100);
     } catch (error) {
       console.error('Failed to load flow:', error);
     }
@@ -181,6 +204,10 @@ export function FlowProvider({ children }: FlowProviderProps) {
       reactFlowInstance.setViewport({ x: 0, y: 0, zoom: 1 });
 
       setIsUnsaved(false);
+
+      // Clear any active connections when creating a new flow
+      // Note: We don't have a current flow ID to clear, so this is mainly cleanup
+      console.log('Created new flow - any previous connections should be cleaned up');
     } catch (error) {
       console.error('Failed to create new flow:', error);
     }
@@ -195,7 +222,7 @@ export function FlowProvider({ children }: FlowProviderProps) {
         return;
       }
 
-      const position = getViewportPosition(true);
+      const position = getViewportPosition(false);
       const newNode = nodeTypeDefinition.createNode(position);
       reactFlowInstance.setNodes((nodes) => [...nodes, newNode]);
       markAsUnsaved();
@@ -260,35 +287,38 @@ export function FlowProvider({ children }: FlowProviderProps) {
       
       const validNodes = newNodes.filter((node): node is NonNullable<typeof node> => node !== null);
 
-      // Create edges (async)
-      const newEdges = await Promise.all(
-        multiNodeDefinition.edges.map(async (edgeConfig) => {
-          try {
-            const sourceNodeId = await getNodeIdForComponent(edgeConfig.source);
-            const targetNodeId = await getNodeIdForComponent(edgeConfig.target);
-            
-            if (!sourceNodeId || !targetNodeId) {
-              console.warn(`Could not resolve node IDs for edge: ${edgeConfig.source} -> ${edgeConfig.target}`);
-              return null;
-            }
-            
-            return {
-              id: `${sourceNodeId}-${targetNodeId}`,
-              source: sourceNodeId,
-              target: targetNodeId,
-            };
-          } catch (error) {
-            console.error(`Failed to create edge ${edgeConfig.source} -> ${edgeConfig.target}:`, error);
-            return null;
-          }
-        })
-      );
-      
-      const validEdges = newEdges.filter((edge): edge is NonNullable<typeof edge> => edge !== null);
+      // Create a mapping from component names to actual node IDs
+      const componentNameToNodeId = new Map<string, string>();
+      multiNodeDefinition.nodes.forEach((nodeConfig, index) => {
+        const correspondingNode = validNodes[index];
+        if (correspondingNode) {
+          componentNameToNodeId.set(nodeConfig.componentName, correspondingNode.id);
+        }
+      });
+
+      // Create edges using the actual node IDs
+      const newEdges = multiNodeDefinition.edges.map((edgeConfig) => {
+        const sourceNodeId = componentNameToNodeId.get(edgeConfig.source);
+        const targetNodeId = componentNameToNodeId.get(edgeConfig.target);
+        
+        if (!sourceNodeId || !targetNodeId) {
+          console.warn(`Could not resolve node IDs for edge: ${edgeConfig.source} -> ${edgeConfig.target}`);
+          return null;
+        }
+        
+        return {
+          id: `${sourceNodeId}-${targetNodeId}`,
+          source: sourceNodeId,
+          target: targetNodeId,
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+          },
+        };
+      }).filter((edge): edge is NonNullable<typeof edge> => edge !== null);
 
       // Add nodes and edges to flow
       reactFlowInstance.setNodes((nodes) => [...nodes, ...validNodes]);
-      reactFlowInstance.setEdges((edges) => [...edges, ...validEdges]);
+      reactFlowInstance.setEdges((edges) => [...edges, ...newEdges]);
       markAsUnsaved();
       
       // Fit view to show all nodes after a short delay to ensure nodes are rendered

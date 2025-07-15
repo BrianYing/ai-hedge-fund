@@ -1,7 +1,6 @@
 import { FlowItemGroup } from '@/components/panels/left/flow-item-group';
 import { SearchBox } from '@/components/panels/search-box';
 import { Accordion } from '@/components/ui/accordion';
-import { useFlowContext } from '@/contexts/flow-context';
 import { useTabsContext } from '@/contexts/tabs-context';
 import { Flow } from '@/types/flow';
 import { FolderOpen } from 'lucide-react';
@@ -35,7 +34,6 @@ export function FlowList({
   onDeleteFlow,
   onRefresh,
 }: FlowListProps) {
-  const { currentFlowId } = useFlowContext();
   const { tabs, activeTabId } = useTabsContext();
 
   // Only consider a flow active if the current active tab is a flow tab with that flow's ID
@@ -54,7 +52,7 @@ export function FlowList({
   const activeFlowId = getActiveFlowId();
 
   return (
-    <div className="flex-grow overflow-auto text-white scrollbar-thin scrollbar-thumb-ramp-grey-700">
+    <div className="flex-grow overflow-auto text-primary scrollbar-thin scrollbar-thumb-ramp-grey-700">
       <SearchBox 
         value={searchQuery} 
         onChange={onSearchChange}
@@ -63,7 +61,7 @@ export function FlowList({
       
       {isLoading ? (
         <div className="flex items-center justify-center py-8">
-          <div className="text-gray-400 text-sm">Loading flows...</div>
+          <div className="text-muted-foreground text-sm">Loading flows...</div>
         </div>
       ) : (
         <Accordion 
@@ -99,10 +97,10 @@ export function FlowList({
       )}
 
       {!isLoading && filteredFlows.length === 0 && (
-        <div className="text-center py-8 text-gray-400 text-sm">
+        <div className="text-center py-8 text-muted-foreground text-sm">
           {flows.length === 0 ? (
             <div className="space-y-2">
-              <FolderOpen size={32} className="mx-auto text-gray-500" />
+              <FolderOpen size={32} className="mx-auto text-muted-foreground" />
               <div>No flows saved yet</div>
               <div className="text-xs">Create your first flow to get started</div>
             </div>

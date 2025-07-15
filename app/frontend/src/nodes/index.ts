@@ -4,6 +4,7 @@ import { AgentNode } from './components/agent-node';
 import { InvestmentReportNode } from './components/investment-report-node';
 import { JsonOutputNode } from './components/json-output-node';
 import { PortfolioManagerNode } from './components/portfolio-manager-node';
+import { StockTickersNode } from './components/stock-tickers-node';
 import { type AppNode } from './types';
 import { TextOutputNode } from './components/text-output-node';
 
@@ -53,5 +54,6 @@ export const nodeTypes = {
   'portfolio-manager-node': PortfolioManagerNode,
   'investment-report-node': InvestmentReportNode,
   'json-output-node': JsonOutputNode,
+  'stock-tickers-node': StockTickersNode,
   'text-output-node': TextOutputNode,
 } satisfies NodeTypes;
