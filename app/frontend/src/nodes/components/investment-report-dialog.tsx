@@ -128,7 +128,10 @@ export function InvestmentReportDialog({
                   <TableBody>
                     {tickers.map(ticker => {
                       const decision = outputNodeData.decisions[ticker];
-                      const currentPrice = outputNodeData.analyst_signals.risk_management_agent?.[ticker]?.current_price || 'N/A';
+                      const riskAgentKey = Object.keys(outputNodeData.analyst_signals || {}).find(k => k.startsWith('risk_management_agent'));
+                      const currentPrice = riskAgentKey
+                        ? outputNodeData.analyst_signals[riskAgentKey]?.[ticker]?.current_price ?? 'N/A'
+                        : 'N/A';
                       return (
                         <TableRow key={ticker}>
                           <TableCell className="font-medium">{ticker}</TableCell>

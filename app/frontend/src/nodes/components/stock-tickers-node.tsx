@@ -236,7 +236,7 @@ export function StockTickersNode({
                   </Button>
                 </div>
               </div>
-              <div className="flex flex-col gap-2">
+              {/* <div className="flex flex-col gap-2">
                 <div className="text-subtitle text-primary flex items-center gap-1">
                   Initial Cash
                 </div>
@@ -252,7 +252,7 @@ export function StockTickersNode({
                     className="pl-8 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
-              </div>
+              </div> */}
               <div className="flex flex-col gap-2">
                 <div className="text-subtitle text-primary flex items-center gap-1">
                   Model

@@ -47,14 +47,14 @@ interface NodeContextType {
   agentNodeData: Record<string, AgentNodeData>;
   outputNodeData: OutputNodeData | null;
   agentModels: Record<string, LanguageModel | null>;
-//   outputNodeOrderStatus: 'IDLE' | 'IN_PROGRESS' | 'COMPLETE' | 'ERROR';
+  outputNodeOrderStatus: 'IDLE' | 'IN_PROGRESS' | 'COMPLETE' | 'ERROR';
   updateAgentNode: (flowId: string | null, nodeId: string, data: Partial<AgentNodeData> | NodeStatus) => void;
   updateAgentNodes: (flowId: string | null, nodeIds: string[], status: NodeStatus) => void;
   setOutputNodeData: (flowId: string | null, data: OutputNodeData) => void;
   setAgentModel: (flowId: string | null, nodeId: string, model: LanguageModel | null) => void;
   getAgentModel: (flowId: string | null, nodeId: string) => LanguageModel | null;
   getAllAgentModels: (flowId: string | null) => Record<string, LanguageModel | null>;
-//   setOutputNodeOrderStatus: (status: 'IDLE' | 'IN_PROGRESS' | 'COMPLETE' | 'ERROR') => void;
+  setOutputNodeOrderStatus: (status: 'IDLE' | 'IN_PROGRESS' | 'COMPLETE' | 'ERROR') => void;
   resetAllNodes: (flowId: string | null) => void;
   exportNodeContextData: (flowId: string | null) => {
     agentNodeData: Record<string, AgentNodeData>;
@@ -78,7 +78,7 @@ export function NodeProvider({ children }: { children: ReactNode }) {
   const [outputNodeData, setOutputNodeData] = useState<Record<string, OutputNodeData>>({});
   // Agent models also need to be flow-aware to maintain model selections per flow
   const [agentModels, setAgentModels] = useState<Record<string, LanguageModel | null>>({});
-//   const [outputNodeOrderStatus, setOutputNodeOrderStatus] = useState<'IDLE' | 'IN_PROGRESS' | 'COMPLETE' | 'ERROR'>('IDLE');
+  const [outputNodeOrderStatus, setOutputNodeOrderStatus] = useState<'IDLE' | 'IN_PROGRESS' | 'COMPLETE' | 'ERROR'>('IDLE');
 
   const updateAgentNode = useCallback((flowId: string | null, nodeId: string, data: Partial<AgentNodeData> | NodeStatus) => {
     const compositeKey = createCompositeKey(flowId, nodeId);
@@ -257,6 +257,7 @@ export function NodeProvider({ children }: { children: ReactNode }) {
       });
     }
 
+    setOutputNodeOrderStatus('IDLE');
     // Note: We don't reset agentModels here as users would want to keep their model selections
   }, []);
 
@@ -373,6 +374,7 @@ export function NodeProvider({ children }: { children: ReactNode }) {
     // New flow-aware functions
     getAgentNodeDataForFlow,
     getOutputNodeDataForFlow,
+    outputNodeOrderStatus, setOutputNodeOrderStatus
   };
 
   return (

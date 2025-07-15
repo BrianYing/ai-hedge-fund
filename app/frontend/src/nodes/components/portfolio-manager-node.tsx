@@ -1,6 +1,6 @@
 import { type NodeProps } from '@xyflow/react';
 import { Brain } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { type PortfolioManagerNode } from '../types';
 import { getStatusColor } from '../utils';
 import { InvestmentReportDialog } from './investment-report-dialog';
 import { NodeShell } from './node-shell';
+import { api } from '@/services/api';
 
 export function PortfolioManagerNode({
   data,
@@ -24,7 +25,9 @@ export function PortfolioManagerNode({
   isConnectable,
 }: NodeProps<PortfolioManagerNode>) {
   const { currentFlowId } = useFlowContext();
-  const { getAgentNodeDataForFlow, setAgentModel, getAgentModel, getOutputNodeDataForFlow } = useNodeContext();
+  const { getAgentNodeDataForFlow, setAgentModel, getAgentModel, getOutputNodeDataForFlow, outputNodeOrderStatus } = useNodeContext();
+  const abortControllerRef = useRef<(() => void) | null>(null);
+  const nodeContext = useNodeContext();
 
   // Get agent node data for the current flow
   const agentNodeData = getAgentNodeDataForFlow(currentFlowId?.toString() || null);
@@ -88,6 +91,33 @@ export function PortfolioManagerNode({
   // Get connected agent IDs
   const { connectedAgentIds } = useOutputNodeConnection(id);
 
+  // Order Execution
+  const isOrderComplete = outputNodeOrderStatus === 'COMPLETE';
+  const isOrderError = outputNodeOrderStatus === 'ERROR';
+  const handleOrder = () => {
+    const tickers = Object.keys(outputNodeData?.decisions || {});
+    tickers.forEach((ticker) => {
+      const decision = outputNodeData?.decisions[ticker];
+      if (decision.action === "buy") {
+        abortControllerRef.current = api.runBuy(
+          {
+            ticker: ticker,
+            qty: decision.quantity,
+          },
+          nodeContext
+        );
+      } else if (decision.action === "sell") {
+        abortControllerRef.current = api.runSell(
+          {
+            ticker: ticker,
+            qty: decision.quantity,
+          },
+          nodeContext
+        );
+      }
+    });
+  };
+
   return (
     <>
       <NodeShell
@@ -128,6 +158,32 @@ export function PortfolioManagerNode({
                     View Investment Report
                   </Button>
                 )}
+              </div>
+
+              <div className='flex flex-col gap-2'>
+                  {isOrderError ? (
+                    <Button
+                      size="sm"
+                      disabled
+                    >
+                      ERROR
+                    </Button>
+                  ) : isOrderComplete ? (
+                    <Button
+                      size="sm"
+                      disabled
+                    >
+                      Order Complete
+                    </Button>
+                  ) : (
+                    <Button 
+                      size="sm"
+                      onClick={handleOrder}
+                      disabled={!outputNodeData}
+                    >
+                      Execute Order
+                    </Button>
+                  )}
               </div>
 
               <Accordion type="single" collapsible>

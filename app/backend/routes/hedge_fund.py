@@ -22,8 +22,7 @@ router = APIRouter(prefix="/hedge-fund")
 async def run_hedge_fund(request_data: HedgeFundRequest, request: Request):
     # try:
         # Create the portfolio
-        portfolio = create_portfolio(request_data.initial_cash, request_data.margin_requirement, request_data.tickers)
-        portfolio = create_alpaca_portfolio(request.margin_requirement, request.tickers)
+        portfolio = create_alpaca_portfolio(request_data.margin_requirement, request_data.tickers)
 
         # Construct agent graph using the React Flow graph structure
         graph = create_graph(

@@ -3,6 +3,7 @@ import {
   Bot,
   Brain,
   Calculator,
+  FileText,
   List,
   LucideIcon,
   Network,
